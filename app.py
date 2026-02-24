@@ -47,12 +47,12 @@ def gen_qr(url):
 
 def wmeta(w,L):
     return " · ".join(f for f in [
-        f"🍇 {w.get('grape','')}" if w.get('grape') else None,
-        f"📍 {w.get('origin','')}" if w.get('origin') else None,
-        f"🏷️ {w.get('aging','')}" if w.get('aging') else None,
-        f"⭐ {w.get('rating','')}" if w.get('rating') else None,
-        f"🔥 {w.get('alcohol','')}%" if w.get('alcohol') else None,
-        f"💶 {w.get('price','')}€" if w.get('price') else None,
+        w.get('grape','') or None,
+        w.get('origin','') or None,
+        w.get('aging','') or None,
+        f"{w.get('rating','')}/5" if w.get('rating') else None,
+        f"{w.get('alcohol','')}%" if w.get('alcohol') else None,
+        f"{w.get('price','')}€" if w.get('price') else None,
     ] if f)
 
 def rcard(r,L,hl=None):
