@@ -302,7 +302,7 @@ with tab_w:
     if wines:
         st.markdown(f"## {t('wines_added',L)}")
         for i,w in enumerate(wines):
-            with st.expander(f"**#{i+1}** — {w['name']}  ({wmeta(w,L)})"):
+            with st.expander(f"Vino {i+1} — {w['name']}  ({wmeta(w,L)})"):
                 ew=wine_form(f"e{i}",L,opts,w)
                 b1,b2=st.columns(2)
                 with b1:
@@ -335,7 +335,7 @@ with tab_db:
     else:
         st.caption(f"{len(all_w)} {t('db_wine_count',L)}")
         for dw in all_w:
-            with st.expander(f"**{dw['name']}** — {wmeta(dw,L)}"):
+            with st.expander(f"{dw['name']} — {wmeta(dw,L)}"):
                 ew=wine_form(f"db{dw['id']}",L,opts,dw)
                 b1,b2=st.columns(2)
                 with b1:
@@ -381,8 +381,27 @@ with tab_c:
         if st.button(t("start_btn",L),use_container_width=True,type="primary"):
             S=load_state();S["started"]=True;save_state(S);st.rerun()
     else:
-        ip=get_ip(); port=st.get_option("server.port") or 8501
-        url=f"http://{ip}:{port}/?modo=participante"
+        # Detect if running on Streamlit Cloud or local
+        import os
+        cloud_url = os.environ.get("STREAMLIT_SERVER_BASE_URL", "") or os.environ.get("HOSTNAME", "")
+        # Check if we have a known cloud deploy URL
+        is_cloud = "streamlit.app" in (st.context.headers.get("Host", "") if hasattr(st, "context") else "")
+
+        # Try to get the real URL from headers
+        try:
+            host = st.context.headers.get("Host", "")
+        except Exception:
+            host = ""
+
+        if host and ("streamlit.app" in host or "." in host and "localhost" not in host and "127.0" not in host):
+            # Cloud or custom domain
+            scheme = "https" if "streamlit.app" in host else "http"
+            url = f"{scheme}://{host}/?modo=participante"
+        else:
+            # Local
+            ip=get_ip(); port=st.get_option("server.port") or 8501
+            url=f"http://{ip}:{port}/?modo=participante"
+
         qr=gen_qr(url)
         st.markdown(f"""<div class="qr-box"><h3>{t('qr_title',L)}</h3>
             <img src="data:image/png;base64,{qr}" width="220" style="margin:10px auto;display:block;border-radius:8px"/>
