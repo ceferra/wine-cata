@@ -47,6 +47,17 @@ def gen_qr(url):
 
 def wmeta(w,L):
     return " · ".join(f for f in [
+        f"🍇 {w.get('grape','')}" if w.get('grape') else None,
+        f"📍 {w.get('origin','')}" if w.get('origin') else None,
+        f"🏷️ {w.get('aging','')}" if w.get('aging') else None,
+        f"⭐ {w.get('rating','')}" if w.get('rating') else None,
+        f"🔥 {w.get('alcohol','')}%" if w.get('alcohol') else None,
+        f"💶 {w.get('price','')}€" if w.get('price') else None,
+    ] if f)
+
+def wmeta_plain(w):
+    """No emojis — safe for st.expander labels (Streamlit converts emojis to broken shortcodes)."""
+    return " · ".join(f for f in [
         w.get('grape','') or None,
         w.get('origin','') or None,
         w.get('aging','') or None,
@@ -302,7 +313,7 @@ with tab_w:
     if wines:
         st.markdown(f"## {t('wines_added',L)}")
         for i,w in enumerate(wines):
-            with st.expander(f"Vino {i+1} — {w['name']}  ({wmeta(w,L)})"):
+            with st.expander(f"Vino {i+1} — {w['name']}  ({wmeta_plain(w)})"):
                 ew=wine_form(f"e{i}",L,opts,w)
                 b1,b2=st.columns(2)
                 with b1:
@@ -335,7 +346,7 @@ with tab_db:
     else:
         st.caption(f"{len(all_w)} {t('db_wine_count',L)}")
         for dw in all_w:
-            with st.expander(f"{dw['name']} — {wmeta(dw,L)}"):
+            with st.expander(f"{dw['name']} — {wmeta_plain(dw)}"):
                 ew=wine_form(f"db{dw['id']}",L,opts,dw)
                 b1,b2=st.columns(2)
                 with b1:
