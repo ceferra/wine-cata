@@ -143,6 +143,11 @@ T = {
 
     # About
     "tab_about": {"es": "ℹ️ About", "en": "ℹ️ About", "va": "ℹ️ About"},
+
+    # Cancel / Undo
+    "cancel_prediction": {"es": "Anular", "en": "Cancel", "va": "Anular"},
+    "cancel_confirm": {"es": "Prediccion anulada", "en": "Prediction cancelled", "va": "Prediccio anulada"},
+    "admin_cancel": {"es": "Anular prediccion", "en": "Cancel prediction", "va": "Anular prediccio"},
 }
 
 

@@ -1,11 +1,11 @@
 """
-🍷 La Cata — App de Cata a Ciegas
+La Cata - App de Cata a Ciegas
   streamlit run app.py --server.address 0.0.0.0
   Organizador: /?modo=organizador   |   Participante: /?modo=participante
 """
 import streamlit as st
 import pandas as pd
-import qrcode, io, base64, socket
+import qrcode, io, base64, socket, os, time
 
 from state import load_state, save_state, reset_state, get_rankings
 from ai_helpers import openai_wine_search, openai_label_recognize
@@ -33,6 +33,7 @@ div[data-baseweb="select"]>div{background:#fff!important;border-color:#d4c5b5!im
 .qr-box{background:#fff;border:2px solid #8b2e38;border-radius:14px;padding:24px;text-align:center;margin:16px 0}
 .qr-url{background:#f5f0ea;border:1px solid #d4c5b5;border-radius:6px;padding:8px 14px;font-family:monospace;font-size:0.9rem;word-break:break-all;margin:8px 0}
 hr{border-color:#e0d5c8!important}
+.wine-card{background:#fff;border:1.5px solid #e0d5c8;border-radius:10px;padding:14px 18px;margin-bottom:8px}
 </style>""", unsafe_allow_html=True)
 
 # ---- Helpers ----
@@ -40,31 +41,41 @@ def get_ip():
     try: s=socket.socket(socket.AF_INET,socket.SOCK_DGRAM);s.connect(("8.8.8.8",80));ip=s.getsockname()[0];s.close();return ip
     except: return "localhost"
 
+def get_participant_url():
+    try: host=st.context.headers.get("Host","")
+    except: host=""
+    if host and "localhost" not in host and "127.0" not in host:
+        scheme="https" if "streamlit.app" in host else "http"
+        return f"{scheme}://{host}/?modo=participante"
+    ip=get_ip(); port=st.get_option("server.port") or 8501
+    return f"http://{ip}:{port}/?modo=participante"
+
 def gen_qr(url):
     q=qrcode.QRCode(version=1,error_correction=qrcode.constants.ERROR_CORRECT_M,box_size=8,border=2)
     q.add_data(url);q.make(fit=True);img=q.make_image(fill_color="#8b2e38",back_color="#ffffff")
     buf=io.BytesIO();img.save(buf,format="PNG");return base64.b64encode(buf.getvalue()).decode()
 
-def wmeta(w,L):
-    return " · ".join(f for f in [
-        f"🍇 {w.get('grape','')}" if w.get('grape') else None,
-        f"📍 {w.get('origin','')}" if w.get('origin') else None,
-        f"🏷️ {w.get('aging','')}" if w.get('aging') else None,
-        f"⭐ {w.get('rating','')}" if w.get('rating') else None,
-        f"🔥 {w.get('alcohol','')}%" if w.get('alcohol') else None,
-        f"💶 {w.get('price','')}€" if w.get('price') else None,
-    ] if f)
+def wmeta_html(w):
+    """HTML version with emojis — safe in st.markdown."""
+    parts = []
+    if w.get('grape'): parts.append(f"🍇 {w['grape']}")
+    if w.get('origin'): parts.append(f"📍 {w['origin']}")
+    if w.get('aging'): parts.append(f"🏷 {w['aging']}")
+    if w.get('rating'): parts.append(f"⭐ {w['rating']}")
+    if w.get('alcohol'): parts.append(f"🔥 {w['alcohol']}%")
+    if w.get('price'): parts.append(f"💶 {w['price']}€")
+    return " · ".join(parts)
 
-def wmeta_plain(w):
-    """No emojis — safe for st.expander labels (Streamlit converts emojis to broken shortcodes)."""
-    return " · ".join(f for f in [
-        w.get('grape','') or None,
-        w.get('origin','') or None,
-        w.get('aging','') or None,
-        f"{w.get('rating','')}/5" if w.get('rating') else None,
-        f"{w.get('alcohol','')}%" if w.get('alcohol') else None,
-        f"{w.get('price','')}€" if w.get('price') else None,
-    ] if f)
+def wmeta_text(w):
+    """Plain text — no emojis, safe everywhere."""
+    parts = []
+    if w.get('grape'): parts.append(w['grape'])
+    if w.get('origin'): parts.append(w['origin'])
+    if w.get('aging'): parts.append(w['aging'])
+    if w.get('rating'): parts.append(f"{w['rating']}/5")
+    if w.get('alcohol'): parts.append(f"{w['alcohol']}%")
+    if w.get('price'): parts.append(f"{w['price']}€")
+    return " · ".join(parts)
 
 def rcard(r,L,hl=None):
     pct=round(r["total"]/r["max_total"]*100) if r["max_total"]>0 else 0
@@ -85,12 +96,7 @@ def rcard(r,L,hl=None):
         <div style="text-align:right"><div style="font-size:1.5rem;font-weight:700;color:{col};font-family:'Playfair Display',serif">{r['total']}</div>
         <div style="font-size:0.7rem;color:#7a6b5e">{t('of',L)} {r['max_total']}</div></div></div>""", unsafe_allow_html=True)
 
-def save_wine_to_db(w):
-    """Save a wine to the database, return the db_id."""
-    return db_add(w)
-
 def wine_form(prefix, L, opts, defaults=None):
-    """Reusable wine form. Returns dict with values."""
     d = defaults or {}
     c1,c2=st.columns(2)
     with c1:
@@ -109,9 +115,34 @@ def wine_form(prefix, L, opts, defaults=None):
     desc=st.text_area(t("f_description",L),value=d.get("description",""),key=f"{prefix}_desc",placeholder=t("f_description_placeholder",L),height=80)
     return {"name":n,"grape":", ".join(g),"origin":o,"aging":ag,"rating":str(rt) if rt else "","alcohol":str(al),"price":str(pr) if pr else "","type":tp,"year":yr.strip(),"description":desc}
 
+CELEBRATION_JS = """
+<script>
+(function() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50];
+        const times = [0, 0.15, 0.3, 0.45, 0.7, 0.85];
+        notes.forEach((f, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.value = f;
+            gain.gain.setValueAtTime(0.3, ctx.currentTime + times[i]);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + times[i] + 0.3);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime + times[i]);
+            osc.stop(ctx.currentTime + times[i] + 0.35);
+        });
+    } catch(e) {}
+})();
+</script>
+"""
+
 # ---- Init ----
 if "openai_key" not in st.session_state: st.session_state.openai_key=""
 if "my_name" not in st.session_state: st.session_state.my_name=None
+if "edit_wine" not in st.session_state: st.session_state.edit_wine=None
 
 S=load_state(); L=S.get("lang","es"); modo=st.query_params.get("modo","organizador")
 is_p=(modo=="participante"); opts=S["options"]
@@ -120,10 +151,12 @@ is_p=(modo=="participante"); opts=S["options"]
 #                    PARTICIPANT MODE
 # ============================================================
 if is_p:
-    st.markdown(f'<div style="text-align:center"><h1>{t("app_title",L)}</h1><p style="color:#7a6b5e!important;font-style:italic">{t("participant",L)}</p></div>', unsafe_allow_html=True)
+    # Auto-refresh every 15s to keep connection alive
+    st.markdown('<meta http-equiv="refresh" content="30">', unsafe_allow_html=True)
+
+    st.markdown(f'<div style="text-align:center"><h1>🍷 {t("app_title",L)}</h1><p style="color:#7a6b5e!important;font-style:italic">{t("participant",L)}</p></div>', unsafe_allow_html=True)
     if not S["started"]:
         st.info(f'{t("not_started",L)} {t("wait_organizer",L)}')
-        if st.button(t("refresh",L)): st.rerun()
         st.stop()
     if not st.session_state.my_name:
         st.markdown(f"## {t('who_are_you',L)}")
@@ -142,18 +175,32 @@ if is_p:
 
     for i,w in enumerate(S["wines"]):
         ky=f"{me}_{i}"; dn=ky in S["guesses"]; rv=i in S["revealed"]
-        lbl=f"{'✅' if dn else '📝'} Vino #{i+1}"
-        if w.get("type"): lbl+=f" ({w['type']})"
-        if dn: lbl+=f" — {t('sent',L)}"
+        status_icon = "✅" if dn else "📝"
+        type_info = f" ({w['type']})" if w.get("type") else ""
+        sent_info = f" — {t('sent',L)}" if dn else ""
+        lbl = f"{status_icon} Vino {i+1}{type_info}{sent_info}"
+
         with st.expander(lbl, expanded=not dn and not rv):
             if dn:
-                st.success(t("prediction_sent",L))
+                # Cancel prediction button
+                c1,c2=st.columns([3,1])
+                with c1: st.success(t("prediction_sent",L))
+                with c2:
+                    if st.button(t("cancel_prediction",L),key=f"canc_{i}",use_container_width=True):
+                        S=load_state(); del S["guesses"][ky]; save_state(S)
+                        st.success(t("cancel_confirm",L)); st.rerun()
                 if rv:
                     ranks=get_rankings(S)
                     my_r=next((r for r in ranks if r["participant"]==me),None)
                     if my_r:
                         pw=next((x for x in my_r["per_wine"] if x["wine_index"]==i),None)
                         if pw:
+                            # Celebration if winner on this wine
+                            is_best = all(pw["score"]["total"] >= (next((x2 for x2 in r2["per_wine"] if x2["wine_index"]==i),{}).get("score",{}).get("total",0)) for r2 in ranks)
+                            if is_best and pw["score"]["total"] > 0:
+                                st.markdown("### 🎉🏆🎉")
+                                st.markdown(CELEBRATION_JS, unsafe_allow_html=True)
+
                             st.markdown(f"**{pw['score']['total']} pts**")
                             cols=st.columns(6)
                             flds=[("grape",25),("origin",25),("aging",20),("rating",10),("alcohol",10),("price",10)]
@@ -162,7 +209,7 @@ if is_p:
                                     pts=pw["score"]["breakdown"].get(fk,0)
                                     ic="🟢" if pts==mx else "🟡" if pts>0 else "🔴"
                                     st.markdown(f"{ic} **{t('score_'+fk,L)}**")
-                                    st.markdown(f"Tú: {pw['guess'].get(fk,'—')}")
+                                    st.markdown(f"Tu: {pw['guess'].get(fk,'—')}")
                                     st.markdown(f"Real: {w.get(fk,'—')}")
                                     st.markdown(f"**+{pts}**")
             else:
@@ -184,8 +231,14 @@ if is_p:
 
     if S["revealed"]:
         st.divider()
+        # Check if there's a global winner to celebrate
+        ranks=get_rankings(S)
+        if len(S["revealed"])==nw and ranks:
+            st.markdown("## 🎉🏆 " + ranks[0]["participant"] + " 🏆🎉")
+            st.markdown(CELEBRATION_JS, unsafe_allow_html=True)
+            st.balloons()
         st.markdown(f"## {t('partial_ranking',L)} ({len(S['revealed'])}/{nw})")
-        for r in get_rankings(S): rcard(r,L,me)
+        for r in ranks: rcard(r,L,me)
     st.divider()
     if st.button(t("refresh",L),use_container_width=True): st.rerun()
     st.stop()
@@ -212,7 +265,7 @@ with st.sidebar:
     st.caption(f"📚 {len(all_db)} {t('db_wine_count',L)}")
     if st.button(t("reset_session",L),use_container_width=True): reset_state(); st.rerun()
 
-st.markdown(f'<div style="text-align:center"><h1>{t("app_title",L)} — {t("organizer",L)}</h1></div>', unsafe_allow_html=True)
+st.markdown(f'<div style="text-align:center"><h1>🍷 {t("app_title",L)} — {t("organizer",L)}</h1></div>', unsafe_allow_html=True)
 
 wines=S["wines"]; participants=S["participants"]; guesses=S["guesses"]; revealed=S["revealed"]; started=S["started"]
 
@@ -225,10 +278,9 @@ with tab_w:
     st.markdown(f"## {t('add_wine',L)}")
     method=st.radio("m",[t("method_db",L),t("method_ai",L),t("method_photo",L),t("method_manual",L)],horizontal=True,label_visibility="collapsed")
 
-    # ---- DATABASE ----
     if method==t("method_db",L):
         st.caption(t("db_caption",L))
-        dbq=st.text_input("🔍",placeholder=t("db_search",L),label_visibility="collapsed",key="dbq")
+        dbq=st.text_input("search_db",placeholder=t("db_search",L),label_visibility="collapsed",key="dbq")
         db_wines=search_wines(dbq) if dbq else get_all_wines()
         if not db_wines:
             st.info(t("db_empty",L) if not dbq else t("db_no_results",L))
@@ -236,15 +288,12 @@ with tab_w:
             for dw in db_wines:
                 c1,c2=st.columns([5,1])
                 with c1:
-                    desc_preview = f" · *{dw['description'][:60]}...*" if dw.get('description','') and len(dw.get('description',''))>60 else (f" · *{dw['description']}*" if dw.get('description','') else "")
-                    st.markdown(f"**{dw['name']}** — {wmeta(dw,L)}{desc_preview}")
+                    desc_preview = f" — *{dw['description'][:50]}...*" if dw.get('description','') and len(dw.get('description',''))>50 else (f" — *{dw['description']}*" if dw.get('description','') else "")
+                    st.markdown(f"**{dw['name']}** {wmeta_html(dw)}{desc_preview}")
                 with c2:
                     if st.button(t("db_add_to_tasting",L),key=f"dba_{dw['id']}"):
-                        S=load_state()
-                        S["wines"].append(wine_to_session(dw))
-                        save_state(S); st.rerun()
+                        S=load_state(); S["wines"].append(wine_to_session(dw)); save_state(S); st.rerun()
 
-    # ---- AI SEARCH ----
     elif method==t("method_ai",L):
         st.caption(t("ai_caption",L))
         c1,c2=st.columns([5,1])
@@ -258,7 +307,6 @@ with tab_w:
                 if r.get("error"): st.error(r["error"])
                 else: st.session_state["_ai"]=r; st.rerun()
 
-    # ---- PHOTO ----
     elif method==t("method_photo",L):
         if not st.session_state.openai_key: st.warning(t("key_needed",L))
         else:
@@ -272,7 +320,6 @@ with tab_w:
                     if r.get("error"): st.error(r["error"])
                     else: st.session_state["_ai"]=r; st.rerun()
 
-    # ---- MANUAL ----
     elif method==t("method_manual",L):
         st.info(t("manual_caption",L))
         mw=wine_form("man",L,opts)
@@ -281,8 +328,7 @@ with tab_w:
             else:
                 mw["source"]="manual"
                 S=load_state(); S["wines"].append(mw); save_state(S)
-                db_add(mw)  # Also save to DB
-                st.success(t("saved_to_db",L)); st.rerun()
+                db_add(mw); st.success(t("saved_to_db",L)); st.rerun()
 
     # ---- Shared AI result form ----
     if st.session_state.get("_ai"):
@@ -301,60 +347,75 @@ with tab_w:
             if st.button(t("add_this_wine",L),key="add_ai",use_container_width=True):
                 aw["source"]=r.get("source","openai")
                 S=load_state(); S["wines"].append(aw); save_state(S)
-                db_add(aw)  # Also save to DB
-                st.session_state["_ai"]=None; st.success(t("saved_to_db",L)); st.rerun()
+                db_add(aw); st.session_state["_ai"]=None; st.success(t("saved_to_db",L)); st.rerun()
         with bc2:
             if st.button(t("discard",L),key="dis_ai",use_container_width=True):
                 st.session_state["_ai"]=None; st.rerun()
 
     st.divider()
 
-    # ---- Wine list editable ----
+    # ---- Wine list — using markdown cards instead of expanders ----
     if wines:
         st.markdown(f"## {t('wines_added',L)}")
         for i,w in enumerate(wines):
-            with st.expander(f"Vino {i+1} — {w['name']}  ({wmeta_plain(w)})"):
-                ew=wine_form(f"e{i}",L,opts,w)
-                b1,b2=st.columns(2)
-                with b1:
-                    if st.button(t("save",L),key=f"sv_{i}",use_container_width=True):
+            st.markdown(f"""<div class="wine-card">
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#8b2e38;color:#fff;font-weight:700;font-size:0.85rem;margin-right:8px">{i+1}</span>
+                <b>{w['name']}</b><br><span style="color:#6b5b50;font-size:0.9rem">{wmeta_html(w)}</span>
+            </div>""", unsafe_allow_html=True)
+            c1,c2,c3=st.columns([1,1,1])
+            with c1:
+                if st.button(f"✏️ {t('save',L).replace('💾 ','')}",key=f"ed_{i}",use_container_width=True):
+                    st.session_state.edit_wine = i if st.session_state.edit_wine != i else None; st.rerun()
+            with c2:
+                if st.button(t("delete",L),key=f"dl_{i}",use_container_width=True):
+                    S=load_state(); S["wines"].pop(i)
+                    ng={}
+                    for k2,v2 in S["guesses"].items():
+                        parts=k2.rsplit("_",1)
+                        if len(parts)==2:
+                            o=int(parts[1])
+                            if o<i:ng[k2]=v2
+                            elif o>i:ng[f"{parts[0]}_{o-1}"]=v2
+                    S["guesses"]=ng; S["revealed"]=[r2 if r2<i else r2-1 for r2 in S["revealed"] if r2!=i]
+                    save_state(S); st.rerun()
+            with c3:
+                pass  # spacing
+
+            if st.session_state.edit_wine == i:
+                with st.container():
+                    ew=wine_form(f"e{i}",L,opts,w)
+                    if st.button(f"💾 {t('save',L).replace('💾 ','')}",key=f"sv_{i}",use_container_width=True):
                         S=load_state(); S["wines"][i].update(ew); save_state(S)
                         if w.get("db_id"): db_upd(w["db_id"],ew)
-                        st.rerun()
-                with b2:
-                    if st.button(t("delete",L),key=f"dl_{i}",use_container_width=True):
-                        S=load_state(); S["wines"].pop(i)
-                        ng={}
-                        for k,v in S["guesses"].items():
-                            parts=k.rsplit("_",1)
-                            if len(parts)==2:
-                                o=int(parts[1])
-                                if o<i:ng[k]=v
-                                elif o>i:ng[f"{parts[0]}_{o-1}"]=v
-                        S["guesses"]=ng; S["revealed"]=[r if r<i else r-1 for r in S["revealed"] if r!=i]
-                        save_state(S); st.rerun()
+                        st.session_state.edit_wine=None; st.rerun()
 
 # ============================================================
 # TAB: DATABASE (Wine Cellar)
 # ============================================================
 with tab_db:
     st.markdown(f"## {t('db_title',L)}")
-    dbq2=st.text_input("🔍",placeholder=t("db_search",L),label_visibility="collapsed",key="dbq2")
+    dbq2=st.text_input("search_db2",placeholder=t("db_search",L),label_visibility="collapsed",key="dbq2")
     all_w=search_wines(dbq2) if dbq2 else get_all_wines()
     if not all_w:
         st.info(t("db_empty",L) if not dbq2 else t("db_no_results",L))
     else:
         st.caption(f"{len(all_w)} {t('db_wine_count',L)}")
         for dw in all_w:
-            with st.expander(f"{dw['name']} — {wmeta_plain(dw)}"):
+            st.markdown(f"""<div class="wine-card"><b>{dw['name']}</b><br>
+                <span style="color:#6b5b50;font-size:0.9rem">{wmeta_html(dw)}</span>
+                {'<br><span style="color:#8b7b6e;font-size:0.85rem;font-style:italic">'+dw['description']+'</span>' if dw.get('description') else ''}
+            </div>""", unsafe_allow_html=True)
+            c1,c2=st.columns(2)
+            with c1:
+                if st.button(f"✏️",key=f"dbed_{dw['id']}",use_container_width=True):
+                    st.session_state[f"db_edit_{dw['id']}"] = not st.session_state.get(f"db_edit_{dw['id']}",False); st.rerun()
+            with c2:
+                if st.button(t("db_delete",L),key=f"dbdl_{dw['id']}",use_container_width=True):
+                    db_del(dw['id']); st.rerun()
+            if st.session_state.get(f"db_edit_{dw['id']}"):
                 ew=wine_form(f"db{dw['id']}",L,opts,dw)
-                b1,b2=st.columns(2)
-                with b1:
-                    if st.button(t("save",L),key=f"dbsv_{dw['id']}",use_container_width=True):
-                        db_upd(dw['id'],ew); st.success(t("saved",L)); st.rerun()
-                with b2:
-                    if st.button(t("db_delete",L),key=f"dbdl_{dw['id']}",use_container_width=True):
-                        db_del(dw['id']); st.rerun()
+                if st.button(t("save",L),key=f"dbsv_{dw['id']}",use_container_width=True):
+                    db_upd(dw['id'],ew); st.session_state[f"db_edit_{dw['id']}"]=False; st.rerun()
 
 # ============================================================
 # TAB: PARTICIPANTS
@@ -380,6 +441,20 @@ with tab_p:
                 S["guesses"]={k:v for k,v in S["guesses"].items() if not k.startswith(f"{p}_")}
                 save_state(S); st.rerun()
 
+    # Admin cancel predictions
+    if started and guesses:
+        st.divider()
+        st.markdown(f"### {t('admin_cancel',L)}")
+        for p in participants:
+            for j in range(len(wines)):
+                gk=f"{p}_{j}"
+                if gk in guesses:
+                    c1,c2=st.columns([4,1])
+                    with c1: st.markdown(f"{p} — Vino {j+1}")
+                    with c2:
+                        if st.button("✕",key=f"ac_{gk}"):
+                            S=load_state(); del S["guesses"][gk]; save_state(S); st.rerun()
+
 # ============================================================
 # TAB: CONTROL
 # ============================================================
@@ -392,27 +467,7 @@ with tab_c:
         if st.button(t("start_btn",L),use_container_width=True,type="primary"):
             S=load_state();S["started"]=True;save_state(S);st.rerun()
     else:
-        # Detect if running on Streamlit Cloud or local
-        import os
-        cloud_url = os.environ.get("STREAMLIT_SERVER_BASE_URL", "") or os.environ.get("HOSTNAME", "")
-        # Check if we have a known cloud deploy URL
-        is_cloud = "streamlit.app" in (st.context.headers.get("Host", "") if hasattr(st, "context") else "")
-
-        # Try to get the real URL from headers
-        try:
-            host = st.context.headers.get("Host", "")
-        except Exception:
-            host = ""
-
-        if host and ("streamlit.app" in host or "." in host and "localhost" not in host and "127.0" not in host):
-            # Cloud or custom domain
-            scheme = "https" if "streamlit.app" in host else "http"
-            url = f"{scheme}://{host}/?modo=participante"
-        else:
-            # Local
-            ip=get_ip(); port=st.get_option("server.port") or 8501
-            url=f"http://{ip}:{port}/?modo=participante"
-
+        url=get_participant_url()
         qr=gen_qr(url)
         st.markdown(f"""<div class="qr-box"><h3>{t('qr_title',L)}</h3>
             <img src="data:image/png;base64,{qr}" width="220" style="margin:10px auto;display:block;border-radius:8px"/>
@@ -424,7 +479,7 @@ with tab_c:
             gc=sum(1 for p in participants if f"{p}_{i}" in guesses)
             is_rev=i in revealed; all_done=gc==len(participants)
             c1,c2,c3=st.columns([3,2,1])
-            with c1: st.markdown(f"**{'✅' if is_rev else '🍷'} #{i+1}** — {w['name']}")
+            with c1: st.markdown(f"**{'✅' if is_rev else '🍷'} Vino {i+1}** — {w['name']}")
             with c2: st.markdown(f":{'green' if all_done else 'orange'}[{gc}/{len(participants)}]")
             with c3:
                 if is_rev: st.markdown("✅")
@@ -439,8 +494,8 @@ with tab_c:
                 st.markdown(f"##### {t('pts_per_wine',L)}")
                 td=[]
                 for r in ranks:
-                    row={"🏅":r["rank"],t("participants_label",L):r["participant"]}
-                    for pw in r["per_wine"]: row[f"#{pw['wine_index']+1}"]=pw["score"]["total"]
+                    row={"pos":r["rank"],t("participants_label",L):r["participant"]}
+                    for pw in r["per_wine"]: row[f"Vino {pw['wine_index']+1}"]=pw["score"]["total"]
                     row[t("total",L)]=r["total"]; td.append(row)
                 if td: st.dataframe(pd.DataFrame(td),use_container_width=True,hide_index=True)
         st.divider()
@@ -454,6 +509,9 @@ with tab_r:
     else:
         ranks=get_rankings(S)
         if ranks:
+            if len(revealed)==len(wines):
+                st.markdown(f"## 🎉🏆 {ranks[0]['participant']} 🏆🎉")
+                st.markdown(CELEBRATION_JS, unsafe_allow_html=True)
             st.markdown(f"## {t('ranking',L)}")
             for r in ranks: rcard(r,L)
             st.divider()
@@ -462,8 +520,8 @@ with tab_r:
                 "rating":t("score_rating",L),"alcohol":t("score_alcohol",L),"price":t("score_price",L)}
             for idx in sorted(revealed):
                 w=wines[idx]
-                st.markdown(f"### Vino #{idx+1} — {w['name']}")
-                st.caption(wmeta(w,L))
+                st.markdown(f"### Vino {idx+1} — {w['name']}")
+                st.caption(wmeta_html(w))
                 rows=[]
                 for r in ranks:
                     pw=next((x for x in r["per_wine"] if x["wine_index"]==idx),None)
@@ -471,7 +529,7 @@ with tab_r:
                         bd=pw["score"]["breakdown"]
                         row={t("participants_label",L):r["participant"]}
                         for fk,fla in fl.items():
-                            row[fla]=f"{pw['guess'].get(fk,'—')} → +{bd.get(fk,0)}"
+                            row[fla]=f"{pw['guess'].get(fk,'—')} (+{bd.get(fk,0)})"
                         row[t("total",L)]=pw["score"]["total"]; rows.append(row)
                 if rows: st.dataframe(pd.DataFrame(rows).sort_values(t("total",L),ascending=False),use_container_width=True,hide_index=True)
                 st.markdown("---")
@@ -486,13 +544,13 @@ with tab_o:
         rm=None
         for j,opt in enumerate(opts[cat]):
             c1,c2=st.columns([6,1])
-            with c1: st.markdown(f"• {opt}")
+            with c1: st.markdown(f"{opt}")
             with c2:
                 if st.button("✕",key=f"rm_{cat}_{j}"): rm=j
         if rm is not None:
             S=load_state(); S["options"][cat].pop(rm); save_state(S); st.rerun()
         c1,c2=st.columns([4,1])
-        with c1: nv=st.text_input(t("new_option_placeholder",L),key=f"new_{cat}",label_visibility="collapsed",placeholder=t("new_option_placeholder",L))
+        with c1: nv=st.text_input("opt",key=f"new_{cat}",label_visibility="collapsed",placeholder=t("new_option_placeholder",L))
         with c2:
             if st.button(t("add_option",L),key=f"add_{cat}",use_container_width=True):
                 if nv.strip():
@@ -505,112 +563,107 @@ with tab_o:
 # TAB: ABOUT
 # ============================================================
 with tab_ab:
-    st.markdown("""
-<div style="text-align:center;padding:2rem 0">
-    <h1 style="font-size:3rem;margin-bottom:0">🍷</h1>
-    <h2 style="margin-top:0.5rem">La Cata</h2>
-</div>
-""", unsafe_allow_html=True)
-
+    st.markdown("""<div style="text-align:center;padding:2rem 0"><h1 style="font-size:3rem;margin-bottom:0">🍷</h1>
+        <h2 style="margin-top:0.5rem">La Cata</h2></div>""", unsafe_allow_html=True)
     about_text = {
         "es": """
-**La Cata** es una aplicación para organizar catas de vino a ciegas con puntuación automática.
+**La Cata** es una aplicacion para organizar catas de vino a ciegas con puntuacion automatica.
 
-Cada participante intenta adivinar las características del vino (uva, origen, crianza, 
-graduación, precio y puntuación) y la app calcula la puntuación de cada uno en tiempo real.
+Cada participante intenta adivinar las caracteristicas del vino (uva, origen, crianza,
+graduacion, precio y puntuacion) y la app calcula la puntuacion de cada uno en tiempo real.
 
-### ✨ Características
+### Caracteristicas
 
-- 🤖 **Búsqueda con IA** — Escribe el nombre de un vino y GPT-4o rellena todos los campos
-- 📷 **Reconocimiento de etiqueta** — Sube una foto y la IA identifica el vino
-- 📚 **Base de datos** — Los vinos se guardan para futuras catas
-- 📊 **Clasificación parcial** — Rankings en vivo después de cada vino revelado
-- 📱 **QR para participantes** — Escanear y jugar desde el móvil
-- 🌍 **Multiidioma** — Castellano, English, Valencià
-- ⚙️ **Opciones configurables** — Uvas, D.O.s y crianzas editables
+- **Busqueda con IA** — Escribe el nombre de un vino y GPT-4o rellena todos los campos
+- **Reconocimiento de etiqueta** — Sube una foto y la IA identifica el vino
+- **Base de datos** — Los vinos se guardan para futuras catas
+- **Clasificacion parcial** — Rankings en vivo despues de cada vino revelado
+- **QR para participantes** — Escanear y jugar desde el movil
+- **Multiidioma** — Castellano, English, Valencia
+- **Opciones configurables** — Uvas, D.O.s y crianzas editables
 
-### 📊 Sistema de puntuación (100 pts/vino)
+### Sistema de puntuacion (100 pts/vino)
 
-| Campo | Máx | Criterio |
+| Campo | Max | Criterio |
 |-------|-----|----------|
 | Uva | 25 | Todas acertadas = 25, proporcional al overlap |
 | Origen (D.O.) | 25 | Exacto = 25, parcial = 10 |
 | Crianza | 20 | Exacto = 20 |
-| Puntuación | 10 | ±0.5 = 10, ±1 = 5 |
-| Alcohol | 10 | ±0.5% = 10, ±1% = 6, ±2% = 3 |
-| Precio | 10 | ±3€ = 10, ±6€ = 6, ±12€ = 3 |
+| Puntuacion | 10 | +/-0.5 = 10, +/-1 = 5 |
+| Alcohol | 10 | +/-0.5% = 10, +/-1% = 6, +/-2% = 3 |
+| Precio | 10 | +/-3eur = 10, +/-6eur = 6, +/-12eur = 3 |
 
 ---
 
-Desarrollada por **Cèsar Ferri** con la ayuda de **Claude** (Anthropic).
+Desarrollada por **Cesar Ferri** con la ayuda de **Claude** (Anthropic).
 
-*El arte de descubrir el vino* 🍷
+*El arte de descubrir el vino*
 """,
         "en": """
 **La Cata** is an app for organizing blind wine tastings with automatic scoring.
 
-Each participant tries to guess the wine's characteristics (grape, origin, aging, 
+Each participant tries to guess the wine's characteristics (grape, origin, aging,
 alcohol, price and rating) and the app calculates scores in real time.
 
-### ✨ Features
+### Features
 
-- 🤖 **AI Search** — Type a wine name and GPT-4o fills all fields
-- 📷 **Label recognition** — Upload a photo and AI identifies the wine
-- 📚 **Database** — Wines are saved for future tastings
-- 📊 **Partial ranking** — Live rankings after each wine reveal
-- 📱 **QR for participants** — Scan and play from your phone
-- 🌍 **Multilingual** — Castellano, English, Valencià
-- ⚙️ **Configurable options** — Grapes, D.O.s and aging types are editable
+- **AI Search** — Type a wine name and GPT-4o fills all fields
+- **Label recognition** — Upload a photo and AI identifies the wine
+- **Database** — Wines are saved for future tastings
+- **Partial ranking** — Live rankings after each wine reveal
+- **QR for participants** — Scan and play from your phone
+- **Multilingual** — Castellano, English, Valencia
+- **Configurable options** — Grapes, D.O.s and aging types are editable
 
-### 📊 Scoring system (100 pts/wine)
+### Scoring system (100 pts/wine)
 
 | Field | Max | Criteria |
 |-------|-----|----------|
 | Grape | 25 | All correct = 25, proportional to overlap |
 | Origin (D.O.) | 25 | Exact = 25, partial = 10 |
 | Aging | 20 | Exact = 20 |
-| Rating | 10 | ±0.5 = 10, ±1 = 5 |
-| Alcohol | 10 | ±0.5% = 10, ±1% = 6, ±2% = 3 |
-| Price | 10 | ±3€ = 10, ±6€ = 6, ±12€ = 3 |
+| Rating | 10 | +/-0.5 = 10, +/-1 = 5 |
+| Alcohol | 10 | +/-0.5% = 10, +/-1% = 6, +/-2% = 3 |
+| Price | 10 | +/-3eur = 10, +/-6eur = 6, +/-12eur = 3 |
 
 ---
 
-Developed by **Cèsar Ferri** with the help of **Claude** (Anthropic).
+Developed by **Cesar Ferri** with the help of **Claude** (Anthropic).
 
-*The art of discovering wine* 🍷
+*The art of discovering wine*
 """,
         "va": """
-**La Tast** és una aplicació per a organitzar tasts de vi a cegues amb puntuació automàtica.
+**La Tast** es una aplicacio per a organitzar tasts de vi a cegues amb puntuacio automatica.
 
-Cada participant intenta endevinar les característiques del vi (raïm, origen, criança, 
-graduació, preu i puntuació) i l'app calcula la puntuació de cadascú en temps real.
+Cada participant intenta endevinar les caracteristiques del vi (raim, origen, crianca,
+graduacio, preu i puntuacio) i l'app calcula la puntuacio de cadascu en temps real.
 
-### ✨ Característiques
+### Caracteristiques
 
-- 🤖 **Cerca amb IA** — Escriu el nom d'un vi i GPT-4o omple tots els camps
-- 📷 **Reconeixement d'etiqueta** — Puja una foto i la IA identifica el vi
-- 📚 **Base de dades** — Els vins es guarden per a futures tasts
-- 📊 **Classificació parcial** — Rànquings en viu després de cada vi revelat
-- 📱 **QR per a participants** — Escanejar i jugar des del mòbil
-- 🌍 **Multiidioma** — Castellano, English, Valencià
-- ⚙️ **Opcions configurables** — Raïms, D.O.s i criançes editables
+- **Cerca amb IA** — Escriu el nom d'un vi i GPT-4o omple tots els camps
+- **Reconeixement d'etiqueta** — Puja una foto i la IA identifica el vi
+- **Base de dades** — Els vins es guarden per a futures tasts
+- **Classificacio parcial** — Rankings en viu despres de cada vi revelat
+- **QR per a participants** — Escanejar i jugar des del mobil
+- **Multiidioma** — Castellano, English, Valencia
+- **Opcions configurables** — Raims, D.O.s i criances editables
 
-### 📊 Sistema de puntuació (100 pts/vi)
+### Sistema de puntuacio (100 pts/vi)
 
-| Camp | Màx | Criteri |
+| Camp | Max | Criteri |
 |------|-----|---------|
-| Raïm | 25 | Totes encertades = 25, proporcional |
+| Raim | 25 | Totes encertades = 25, proporcional |
 | Origen (D.O.) | 25 | Exacte = 25, parcial = 10 |
-| Criança | 20 | Exacte = 20 |
-| Puntuació | 10 | ±0.5 = 10, ±1 = 5 |
-| Alcohol | 10 | ±0.5% = 10, ±1% = 6, ±2% = 3 |
-| Preu | 10 | ±3€ = 10, ±6€ = 6, ±12€ = 3 |
+| Crianca | 20 | Exacte = 20 |
+| Puntuacio | 10 | +/-0.5 = 10, +/-1 = 5 |
+| Alcohol | 10 | +/-0.5% = 10, +/-1% = 6, +/-2% = 3 |
+| Preu | 10 | +/-3eur = 10, +/-6eur = 6, +/-12eur = 3 |
 
 ---
 
-Desenvolupada per **Cèsar Ferri** amb l'ajuda de **Claude** (Anthropic).
+Desenvolupada per **Cesar Ferri** amb l'ajuda de **Claude** (Anthropic).
 
-*L'art de descobrir el vi* 🍷
+*L'art de descobrir el vi*
 """,
     }
     st.markdown(about_text.get(L, about_text["es"]))
