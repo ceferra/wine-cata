@@ -190,10 +190,10 @@ if is_p:
 
     for i,w in enumerate(S["wines"]):
         ky=f"{me}_{i}"; dn=ky in S["guesses"]; rv=i in S["revealed"]
-        status_icon = "✅" if dn else "📝"
+        status = "[OK]" if dn else "[  ]"
         type_info = f" ({w['type']})" if w.get("type") else ""
-        sent_info = f" — {t('sent',L)}" if dn else ""
-        lbl = f"{status_icon} Vino {i+1}{type_info}{sent_info}"
+        sent_info = f" -- {t('sent',L)}" if dn else ""
+        lbl = f"{status} Vino {i+1}{type_info}{sent_info}"
 
         with st.expander(lbl, expanded=not dn and not rv):
             if dn:
