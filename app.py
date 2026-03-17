@@ -22,7 +22,9 @@ section[data-testid="stSidebar"]{background:#f0ebe6!important;border-right:2px s
 h1,h2,h3{font-family:'Playfair Display',serif!important;color:#2c1518!important}
 p,li,span,div,label,.stMarkdown,td,th{font-family:'Source Sans 3',sans-serif!important;color:#3a302a!important}
 .stButton>button{background:#8b2e38!important;color:#fff!important;border:none!important;border-radius:8px!important;font-weight:600!important}
-.stButton>button:hover{background:#a83a46!important}
+.stButton>button:hover{background:#a83a46!important;color:#fff!important}
+.stButton>button:active,.stButton>button:focus{color:#fff!important}
+.stButton>button span,.stButton>button p{color:#fff!important}
 .stTabs [data-baseweb="tab"]{background:#f0ebe6;border:1.5px solid #d4c5b5;border-radius:8px 8px 0 0;color:#6b5b50;font-weight:600}
 .stTabs [aria-selected="true"]{background:#8b2e38!important;color:#fff!important;border-color:#8b2e38!important}
 .stTabs [data-baseweb="tab-highlight"],.stTabs [data-baseweb="tab-border"]{display:none}
@@ -58,13 +60,13 @@ def gen_qr(url):
 def wmeta_html(w):
     """HTML version with emojis — safe in st.markdown."""
     parts = []
-    if w.get('grape'): parts.append(f"🍇 {w['grape']}")
-    if w.get('origin'): parts.append(f"📍 {w['origin']}")
-    if w.get('aging'): parts.append(f"🏷 {w['aging']}")
-    if w.get('rating'): parts.append(f"⭐ {w['rating']}")
-    if w.get('alcohol'): parts.append(f"🔥 {w['alcohol']}%")
-    if w.get('price'): parts.append(f"💶 {w['price']}€")
-    return " · ".join(parts)
+    if w.get('grape'): parts.append(f"Uva: {w['grape']}")
+    if w.get('origin'): parts.append(f"DO: {w['origin']}")
+    if w.get('aging'): parts.append(f"Crianza: {w['aging']}")
+    if w.get('rating'): parts.append(f"Punt: {w['rating']}")
+    if w.get('alcohol'): parts.append(f"Alc: {w['alcohol']}%")
+    if w.get('price'): parts.append(f"Precio: {w['price']}E")
+    return " | ".join(parts)
 
 def wmeta_text(w):
     """Plain text — no emojis, safe everywhere."""
