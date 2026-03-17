@@ -151,24 +151,37 @@ is_p=(modo=="participante"); opts=S["options"]
 #                    PARTICIPANT MODE
 # ============================================================
 if is_p:
-    # Auto-refresh every 15s to keep connection alive
-    st.markdown('<meta http-equiv="refresh" content="30">', unsafe_allow_html=True)
-
     st.markdown(f'<div style="text-align:center"><h1>🍷 {t("app_title",L)}</h1><p style="color:#7a6b5e!important;font-style:italic">{t("participant",L)}</p></div>', unsafe_allow_html=True)
     if not S["started"]:
         st.info(f'{t("not_started",L)} {t("wait_organizer",L)}')
+        if st.button(t("refresh",L)): st.rerun()
         st.stop()
+
+    # Persist participant name in query params so it survives reconnections
+    saved_name = st.query_params.get("nombre", None)
+    if st.session_state.my_name is None and saved_name and saved_name in S["participants"]:
+        st.session_state.my_name = saved_name
+
     if not st.session_state.my_name:
         st.markdown(f"## {t('who_are_you',L)}")
         for p in S["participants"]:
-            if st.button(p,key=f"s_{p}",use_container_width=True): st.session_state.my_name=p; st.rerun()
+            if st.button(p,key=f"s_{p}",use_container_width=True):
+                    st.session_state.my_name=p
+                    st.query_params["nombre"]=p
+                    st.rerun()
         st.stop()
     me=st.session_state.my_name
-    if me not in S["participants"]: st.session_state.my_name=None; st.rerun()
+    if me not in S["participants"]:
+        st.session_state.my_name=None
+        if "nombre" in st.query_params: del st.query_params["nombre"]
+        st.rerun()
     ch,cb=st.columns([4,1])
     with ch: st.markdown(f"## 🍷 {t('hello',L)}, **{me}**")
     with cb:
-        if st.button(t("change",L)): st.session_state.my_name=None; st.rerun()
+        if st.button(t("change",L)):
+                st.session_state.my_name=None
+                if "nombre" in st.query_params: del st.query_params["nombre"]
+                st.rerun()
 
     nw=len(S["wines"]); done=sum(1 for i in range(nw) if f"{me}_{i}" in S["guesses"])
     st.progress(done/nw if nw else 0, text=f"{done}/{nw} {t('completed',L)}")
