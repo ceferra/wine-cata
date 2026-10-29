@@ -1,0 +1,14 @@
+[theme]
+# Forced light theme: phones in dark mode used to get dark inputs with dark text.
+base = "light"
+primaryColor = "#8b2e38"
+backgroundColor = "#faf7f4"
+secondaryBackgroundColor = "#f0ebe6"
+textColor = "#2c1518"
+font = "sans serif"
+
+[client]
+toolbarMode = "minimal"
+
+[server]
+maxUploadSize = 15

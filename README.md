@@ -1,56 +1,73 @@
-# 🍷 La Cata — App de Cata a Ciegas
+# 🍷 La Cata — cata de vinos a ciegas
 
-## 🚀 Uso local
+Aplicación Streamlit para organizar catas a ciegas con puntuación automática, pensada para jugarse desde el móvil.
+
+## Cómo funciona
+
+1. El organizador entra en la web y crea una cata con un **PIN**. La app le da un **código de sala** (p. ej. `R8XCJ`).
+2. Añade los vinos: desde la bodega, con IA (por nombre o foto de la etiqueta) o a mano.
+3. Los participantes escanean el QR (o escriben el código) y se apuntan con su nombre. Cada uno recibe un **enlace personal**.
+4. El organizador pulsa **Empezar** y, cuando todos han respondido, va **revelando** los vinos. Las pantallas se actualizan solas.
+
+| URL | Quién |
+|---|---|
+| `/` | portada: unirse o crear una cata |
+| `/?sala=CODIGO` | participante |
+| `/?sala=CODIGO&org=1` | organizador (pide el PIN) |
+| `/?sala=CODIGO&pantalla=1` | pantalla para proyectar: QR, progreso y clasificación, sin desvelar nada |
+
+## Puntuación (100 puntos por vino)
+
+| Campo | Máx. | Criterio |
+|---|---|---|
+| Uva | 25 | Uvas acertadas / todas las mencionadas (Jaccard): marcar todas no sirve |
+| Origen | 25 | D.O. exacta 25 · otra D.O. de la misma región 10 |
+| Crianza | 20 | Exacta 20 · contigua (Crianza↔Reserva) 8 |
+| Puntuación | 10 | ±0,5 → 10 · ±1 → 5 |
+| Alcohol | 10 | ±0,5 → 10 · ±1 → 6 · ±2 → 3 |
+| Precio | 10 | ±max(3 €, 15 %) → 10 · ±max(6 €, 30 %) → 6 · ±max(12 €, 50 %) → 3 |
+
+Los campos que el vino real no tiene no puntúan; los que el participante deja vacíos valen 0.
+Además, cada uno puede decir **cuánto le gusta** cada vino (★, no puntúa). Al final salen el favorito,
+el más difícil y el de mejor calidad-precio, y se pueden descargar los resultados en CSV.
+
+## Uso local
 
 ```bash
-pip install -r requirements.txt
-streamlit run app.py --server.address 0.0.0.0
+python -m venv .venv && .venv/bin/pip install -r requirements.txt
+.venv/bin/streamlit run app.py --server.address 0.0.0.0
 ```
 
-- Organizador: `http://localhost:8501`
-- Participantes: escanean el QR → `http://<tu-ip>:8501/?modo=participante`
+Los móviles de la misma red entran con el QR (usa la IP del ordenador). Los datos se guardan en `lacata.db` (SQLite).
 
-## ☁️ Deploy en Streamlit Cloud
+## Despliegue en Streamlit Cloud
 
-1. Sube este directorio a un repo de GitHub
-2. Ve a [share.streamlit.io](https://share.streamlit.io)
-3. Conecta tu repo → selecciona `app.py`
-4. En **Settings > Secrets** añade:
-   ```
-   OPENAI_API_KEY = "sk-..."
-   ```
-5. Deploy → tu URL será `https://tu-app.streamlit.app`
-6. Participantes: `https://tu-app.streamlit.app/?modo=participante`
+1. Sube el repositorio a GitHub y créalo en [share.streamlit.io](https://share.streamlit.io) con `app.py`.
+2. En **Settings → Secrets** pega lo que necesites de [`.streamlit/secrets.toml.example`](.streamlit/secrets.toml.example):
+   - `OPENAI_API_KEY`: activa la búsqueda con IA y la lectura de etiquetas.
+   - `DATABASE_URL`: **muy recomendable**. Streamlit Cloud borra el disco en cada reinicio, así que sin una base de datos
+     externa se pierden las catas y la bodega. Vale un Postgres gratuito de Supabase o Neon.
+   - `APP_PASSWORD`: si la pones, hace falta para crear catas. Así nadie gasta tu API key de OpenAI.
+   - `PUBLIC_URL`: solo si el QR sale con una dirección incorrecta.
 
-## 📚 Base de datos de vinos
+## Tests
 
-Los vinos se guardan automáticamente en una base de datos SQLite (`wines.db`).
-- Al añadir un vino (por IA, foto o manual) se guarda en la BD
-- En la siguiente cata, puedes cargarlos desde **📚 Bodega**
-- Los vinos de la BD se pueden buscar, editar y eliminar
+```bash
+.venv/bin/python -m pytest
+```
 
-## 🌍 Idiomas
-
-Castellano · English · Valencià — seleccionable en la sidebar del organizador.
-
-## 📊 Puntuación (100 pts/vino)
-
-| Campo | Máx | Criterio |
-|-------|-----|----------|
-| Uva | 25 | Multi-select. Todas=25, proporcional |
-| Origen (D.O.) | 25 | Select. Exacto=25, parcial=10 |
-| Crianza | 20 | Select. Exacto=20 |
-| Puntuación | 10 | Número 0-5. ±0.5=10, ±1=5 |
-| Alcohol | 10 | ±0.5%=10, ±1%=6, ±2%=3 |
-| Precio | 10 | ±3€=10, ±6€=6, ±12€=3 |
-
-## 📁 Archivos
+## Estructura
 
 ```
-app.py           → App Streamlit principal
-state.py         → Estado de sesión (JSON file)
-db.py            → Base de datos SQLite
-ai_helpers.py    → OpenAI (búsqueda + etiqueta)
-i18n.py          → Traducciones (ES/EN/VA)
-.streamlit/      → Config tema Streamlit
+app.py                  enrutado según la URL
+lacata/db.py            almacenamiento (SQLAlchemy: SQLite o Postgres), transacciones atómicas
+lacata/scoring.py       puntuación y clasificación (funciones puras)
+lacata/ai.py            OpenAI con salida estructurada (JSON schema)
+lacata/i18n.py          Castellano · English · Valencià
+lacata/ui.py            CSS, tarjetas, QR, refresco automático, formulario de vino
+lacata/views/           home, participant, organizer, screen
+.streamlit/config.toml  tema claro forzado (evita el texto ilegible con el móvil en modo oscuro)
+tests/                  pytest
 ```
+
+Desarrollada por **César Ferri** con la ayuda de **Claude** (Anthropic).
