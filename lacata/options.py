@@ -18,12 +18,13 @@ ORIGIN_REGIONS = {
     "Rías Baixas": "Atlántico", "Ribeiro": "Atlántico", "Monterrei": "Atlántico",
     "Valdeorras": "Atlántico", "Ribeira Sacra": "Atlántico", "Txakoli": "Atlántico",
     "Priorat": "Cataluña", "Montsant": "Cataluña", "Penedès": "Cataluña", "Terra Alta": "Cataluña",
-    "Empordà": "Cataluña", "Costers del Segre": "Cataluña", "Cava": "Cataluña",
+    "Empordà": "Cataluña", "Costers del Segre": "Cataluña", "Cava": "Cataluña", "Catalunya": "Cataluña",
     "Valencia": "Levante", "Alicante": "Levante", "Utiel-Requena": "Levante",
     "Jumilla": "Levante", "Yecla": "Levante", "Bullas": "Levante",
     "La Mancha": "Centro", "Valdepeñas": "Centro", "Manchuela": "Centro",
     "Méntrida": "Centro", "Vinos de Madrid": "Centro",
-    "Jerez": "Andalucía", "Montilla-Moriles": "Andalucía", "Málaga": "Andalucía",
+    "Jerez": "Andalucía", "Manzanilla-Sanlúcar de Barrameda": "Andalucía", "Montilla-Moriles": "Andalucía",
+    "Málaga": "Andalucía",
 }
 DEFAULT_ORIGINS = list(ORIGIN_REGIONS)
 

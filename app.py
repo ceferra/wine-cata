@@ -14,8 +14,19 @@ from lacata.config import export_database_url
 
 export_database_url()
 
-from lacata import db, ui  # noqa: E402  (DATABASE_URL must be set first)
+from lacata import catalog, db, ui  # noqa: E402  (DATABASE_URL must be set first)
 from lacata.views import home, organizer, participant, screen  # noqa: E402
+
+
+@st.cache_resource
+def _seed_catalog():
+    """Once per server start: an empty cellar (new install, or SQLite wiped by a Streamlit Cloud
+    restart) gets the bundled catalog of common wines back."""
+    if db.cellar_count() == 0:
+        db.cellar_seed(catalog.load())
+
+
+_seed_catalog()
 
 qp = st.query_params
 code = (qp.get("sala") or "").strip().upper()

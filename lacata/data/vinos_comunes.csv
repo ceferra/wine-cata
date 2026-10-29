@@ -1,0 +1,99 @@
+name,winery,grape,origin,aging,type,alcohol,price
+Marqués de Cáceres Crianza,Marqués de Cáceres,"Tempranillo, Garnacha, Graciano",Rioja,Crianza,Tinto,13.5,9
+Marqués de Cáceres Blanco,Marqués de Cáceres,Viura,Rioja,Joven,Blanco,12.5,6
+Marqués de Riscal Reserva,Marqués de Riscal,"Tempranillo, Graciano",Rioja,Reserva,Tinto,14,17
+Campo Viejo Crianza,Campo Viejo,"Tempranillo, Garnacha, Cariñena",Rioja,Crianza,Tinto,13.5,7
+Campo Viejo Reserva,Campo Viejo,"Tempranillo, Graciano, Cariñena",Rioja,Reserva,Tinto,13.5,10
+Faustino I Gran Reserva,Bodegas Faustino,"Tempranillo, Graciano, Cariñena",Rioja,Gran Reserva,Tinto,13.5,20
+Faustino VII,Bodegas Faustino,Tempranillo,Rioja,Joven,Tinto,13,5
+Ramón Bilbao Crianza,Ramón Bilbao,Tempranillo,Rioja,Crianza,Tinto,14,10
+Ramón Bilbao Reserva,Ramón Bilbao,"Tempranillo, Cariñena, Graciano",Rioja,Reserva,Tinto,14,15
+Beronia Crianza,Beronia,"Tempranillo, Garnacha, Cariñena",Rioja,Crianza,Tinto,13.5,9
+Muga Reserva,Bodegas Muga,"Tempranillo, Garnacha, Cariñena, Graciano",Rioja,Reserva,Tinto,14,22
+Muga Rosado,Bodegas Muga,"Garnacha, Viura, Tempranillo",Rioja,Joven,Rosado,13,10
+Viña Ardanza Reserva,La Rioja Alta,"Tempranillo, Garnacha",Rioja,Reserva,Tinto,14.5,30
+Cune Crianza,CVNE,"Tempranillo, Garnacha, Cariñena",Rioja,Crianza,Tinto,13.5,9
+Monopole,CVNE,Viura,Rioja,Joven,Blanco,13,9
+Viña Real Crianza,CVNE,"Tempranillo, Garnacha, Cariñena, Graciano",Rioja,Crianza,Tinto,13.5,12
+Imperial Reserva,CVNE,"Tempranillo, Graciano, Cariñena",Rioja,Reserva,Tinto,14,35
+Viña Tondonia Reserva,López de Heredia,"Tempranillo, Garnacha, Cariñena, Graciano",Rioja,Reserva,Tinto,13,40
+Viña Pomal Crianza,Bodegas Bilbaínas,Tempranillo,Rioja,Crianza,Tinto,14,10
+El Coto Crianza,El Coto de Rioja,Tempranillo,Rioja,Crianza,Tinto,13.5,7
+Coto de Imaz Reserva,El Coto de Rioja,Tempranillo,Rioja,Reserva,Tinto,13.5,12
+Luis Cañas Crianza,Luis Cañas,"Tempranillo, Garnacha",Rioja,Crianza,Tinto,14,12
+Marqués de Murrieta Reserva,Marqués de Murrieta,"Tempranillo, Garnacha, Cariñena, Graciano",Rioja,Reserva,Tinto,14,25
+LAN Crianza,Bodegas LAN,Tempranillo,Rioja,Crianza,Tinto,13.5,8
+Glorioso Crianza,Bodegas Palacio,Tempranillo,Rioja,Crianza,Tinto,13.5,8
+Azpilicueta Crianza,Azpilicueta,"Tempranillo, Graciano, Cariñena",Rioja,Crianza,Tinto,13.5,9
+Rioja Vega Crianza,Rioja Vega,"Tempranillo, Garnacha, Cariñena",Rioja,Crianza,Tinto,13.5,7
+Protos Roble,Protos,Tempranillo,Ribera del Duero,Roble,Tinto,14,10
+Protos Crianza,Protos,Tempranillo,Ribera del Duero,Crianza,Tinto,14,15
+Protos Reserva,Protos,Tempranillo,Ribera del Duero,Reserva,Tinto,14.5,25
+Pruno,Finca Villacreces,"Tempranillo, Cabernet Sauvignon",Ribera del Duero,Crianza,Tinto,14.5,12
+Emilio Moro,Bodegas Emilio Moro,Tempranillo,Ribera del Duero,Crianza,Tinto,14.5,20
+Pago de Carraovejas,Pago de Carraovejas,"Tempranillo, Cabernet Sauvignon, Merlot",Ribera del Duero,Crianza,Tinto,14.5,40
+Arzuaga Crianza,Arzuaga Navarro,"Tempranillo, Cabernet Sauvignon, Merlot",Ribera del Duero,Crianza,Tinto,14,22
+Matarromera Crianza,Matarromera,Tempranillo,Ribera del Duero,Crianza,Tinto,14,18
+Viña Pedrosa Crianza,Pérez Pascuas,Tempranillo,Ribera del Duero,Crianza,Tinto,14,25
+Legaris Crianza,Legaris,Tempranillo,Ribera del Duero,Crianza,Tinto,14,15
+Condado de Haza,Familia Fernández Rivera,Tempranillo,Ribera del Duero,Crianza,Tinto,14,18
+Tinto Pesquera Crianza,Familia Fernández Rivera,Tempranillo,Ribera del Duero,Crianza,Tinto,14,22
+PradoRey Roble,PradoRey,"Tempranillo, Cabernet Sauvignon, Merlot",Ribera del Duero,Roble,Tinto,14,9
+José Pariente Verdejo,José Pariente,Verdejo,Rueda,Joven,Blanco,13,10
+Marqués de Riscal Verdejo,Marqués de Riscal,Verdejo,Rueda,Joven,Blanco,13,7
+Protos Verdejo,Protos,Verdejo,Rueda,Joven,Blanco,13,9
+Cuatro Rayas Verdejo,Cuatro Rayas,Verdejo,Rueda,Joven,Blanco,13,6
+Shaya,Bodegas Shaya,Verdejo,Rueda,Joven,Blanco,13.5,13
+Ramón Bilbao Verdejo,Ramón Bilbao,Verdejo,Rueda,Joven,Blanco,13,9
+Menade Verdejo,Menade,Verdejo,Rueda,Joven,Blanco,13,10
+Martín Códax,Martín Códax,Albariño,Rías Baixas,Joven,Blanco,12.5,11
+Paco & Lola,Paco & Lola,Albariño,Rías Baixas,Joven,Blanco,12.5,13
+Terras Gauda O Rosal,Terras Gauda,"Albariño, Loureiro, Caíño Blanco",Rías Baixas,Joven,Blanco,12.5,15
+Mar de Frades,Mar de Frades,Albariño,Rías Baixas,Joven,Blanco,12.5,15
+Pazo de Señorans,Pazo de Señorans,Albariño,Rías Baixas,Joven,Blanco,13,18
+Pazo Barrantes,Pazo Barrantes,Albariño,Rías Baixas,Joven,Blanco,13,17
+Condes de Albarei,Condes de Albarei,Albariño,Rías Baixas,Joven,Blanco,12,10
+Fefiñanes,Palacio de Fefiñanes,Albariño,Rías Baixas,Joven,Blanco,13,17
+Granbazán Etiqueta Verde,Agro de Bazán,Albariño,Rías Baixas,Joven,Blanco,12.5,13
+Godeval,Bodegas Godeval,Godello,Valdeorras,Joven,Blanco,13,12
+Gaba do Xil Godello,Telmo Rodríguez,Godello,Valdeorras,Joven,Blanco,13,11
+Viña Costeira,Viña Costeira,"Treixadura, Torrontés, Albariño, Godello, Loureiro",Ribeiro,Joven,Blanco,12.5,8
+Pétalos del Bierzo,Descendientes de J. Palacios,Mencía,Bierzo,Roble,Tinto,14,17
+Tilenus Envejecido en Roble,Bodegas Estefanía,Mencía,Bierzo,Roble,Tinto,14,10
+Luna Beberide Mencía,Luna Beberide,Mencía,Bierzo,Joven,Tinto,13.5,10
+Guímaro Mencía,Guímaro,Mencía,Ribeira Sacra,Joven,Tinto,13,12
+Matsu El Pícaro,Bodegas Matsu,Tempranillo,Toro,Roble,Tinto,15,10
+Termes,Numanthia,Tempranillo,Toro,Crianza,Tinto,15,20
+Les Terrasses,Álvaro Palacios,"Garnacha, Cariñena",Priorat,Crianza,Tinto,15,30
+Camins del Priorat,Álvaro Palacios,"Garnacha, Cariñena, Syrah, Cabernet Sauvignon, Merlot",Priorat,Roble,Tinto,14.5,18
+Can Blau,Celler Can Blau,"Cariñena, Syrah, Garnacha",Montsant,Crianza,Tinto,14.5,15
+Freixenet Cordón Negro Brut,Freixenet,"Macabeo, Xarel·lo, Parellada",Cava,,Espumoso,11.5,6
+Codorníu Clásico Brut,Codorníu,"Macabeo, Xarel·lo, Parellada",Cava,,Espumoso,11.5,6
+Anna de Codorníu Brut,Codorníu,"Chardonnay, Macabeo, Xarel·lo, Parellada",Cava,,Espumoso,11.5,10
+Segura Viudas Brut Reserva,Segura Viudas,"Macabeo, Parellada, Xarel·lo",Cava,Reserva,Espumoso,11.5,8
+Juvé & Camps Reserva de la Familia,Juvé & Camps,"Macabeo, Xarel·lo, Parellada",Cava,Gran Reserva,Espumoso,12,20
+Viña Esmeralda,Familia Torres,"Moscatel, Gewürztraminer",Catalunya,Joven,Blanco,11.5,8
+Sangre de Toro,Familia Torres,"Garnacha, Cariñena",Catalunya,Joven,Tinto,13.5,6
+Coronas,Familia Torres,"Tempranillo, Cabernet Sauvignon",Catalunya,Crianza,Tinto,13.5,7
+Gran Feudo Rosado,Bodegas Chivite,Garnacha,Navarra,Joven,Rosado,13,6
+Chivite Las Fincas Rosado,Bodegas Chivite,"Garnacha, Tempranillo",Navarra,Joven,Rosado,12.5,12
+Viñas del Vero Chardonnay,Viñas del Vero,Chardonnay,Somontano,Joven,Blanco,13.5,8
+Enate Crianza,Enate,"Tempranillo, Cabernet Sauvignon",Somontano,Crianza,Tinto,14,11
+Enate Chardonnay 234,Enate,Chardonnay,Somontano,Joven,Blanco,13.5,12
+Borsao Selección,Bodegas Borsao,"Garnacha, Tempranillo, Syrah",Campo de Borja,Joven,Tinto,14,5
+Borsao Tres Picos,Bodegas Borsao,Garnacha,Campo de Borja,Roble,Tinto,15,15
+Atteca,Bodegas Ateca,Garnacha,Calatayud,Crianza,Tinto,15,14
+Castillo de Monséran,Bodegas San Valero,Garnacha,Cariñena,Joven,Tinto,13.5,4
+Juan Gil 4 Meses,Bodegas Juan Gil,Monastrell,Jumilla,Roble,Tinto,15,8
+Juan Gil Etiqueta Plata,Bodegas Juan Gil,Monastrell,Jumilla,Crianza,Tinto,15,14
+Hécula,Bodegas Castaño,Monastrell,Yecla,Roble,Tinto,14.5,9
+La Tremenda,Enrique Mendoza,Monastrell,Alicante,Crianza,Tinto,14.5,9
+Pasión de Bobal,Bodegas Sierra Norte,Bobal,Utiel-Requena,Roble,Tinto,13.5,8
+Hoya de Cadenas Reserva Privada,Vicente Gandía,"Tempranillo, Cabernet Sauvignon",Utiel-Requena,Reserva,Tinto,13.5,6
+Viña Albali Reserva,Félix Solís,Tempranillo,Valdepeñas,Reserva,Tinto,13,5
+Señorío de los Llanos Reserva,Los Llanos,Tempranillo,Valdepeñas,Reserva,Tinto,13,5
+Tío Pepe Fino,González Byass,Palomino Fino,Jerez,,Generoso,15,9
+La Guita Manzanilla,Hijos de Rainera Pérez Marín,Palomino Fino,Manzanilla-Sanlúcar de Barrameda,,Generoso,15,8
+Solear Manzanilla,Barbadillo,Palomino Fino,Manzanilla-Sanlúcar de Barrameda,,Generoso,15,8
+Alvear Pedro Ximénez 1927,Alvear,Pedro Ximénez,Montilla-Moriles,,Dulce,16,15
+Txomin Etxaniz,Txomin Etxaniz,Hondarrabi Zuri,Txakoli,Joven,Blanco,11,13

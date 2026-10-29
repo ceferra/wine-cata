@@ -2,7 +2,7 @@
 
 import streamlit as st
 
-from .. import ai, db, ui
+from .. import ai, catalog, db, ui
 from ..config import secret
 from ..i18n import LANGS, t
 from ..scoring import rankings
@@ -92,11 +92,14 @@ def _wines_tab(tasting, wines, guesses, L):
         found = db.cellar_list(q)
         if not found:
             st.info(t("db_no_results" if q else "db_empty", L))
+        if not q:
+            _catalog_button(L, "seed_add")
         for cw in found[:40]:
             ui.wine_card(cw, L, show_desc=False)
             if st.button(t("db_add_to_tasting", L), key=f"cadd_{cw['id']}", width="stretch",
                          disabled=cw["id"] in in_tasting):
-                _add_wine(tasting, cw, L, review=False, verified=True, to_cellar=False, cellar_id=cw["id"])
+                _add_wine(tasting, cw, L, review=cw["source"] == "catalog", verified=False, to_cellar=False,
+                          cellar_id=cw["id"])
                 st.rerun()
 
     elif method in ("ai", "photo"):
@@ -176,7 +179,7 @@ def _wines_tab(tasting, wines, guesses, L):
                 db.add_options(tasting["id"], [g.strip() for g in wine["grape"].split(",")], [wine["origin"]])
                 db.update_wine(w["id"], wine, needs_review=w["needs_review"] and not verified)
                 if to_cellar and w["cellar_id"]:
-                    db.cellar_update(w["cellar_id"], wine)
+                    db.cellar_update(w["cellar_id"], wine, verified=not w["needs_review"] or verified)
                 st.session_state["edit_wine"] = None
                 ui.flash(t("saved", L))
                 st.rerun()
@@ -301,14 +304,30 @@ def _results_tab(tasting, wines, people, guesses, ranks, L):
 
 # ---------------------------------------------------------------- cellar
 
+def _catalog_button(L, key):
+    """Offer to load the bundled catalog of common Spanish wines, while some are missing."""
+    names = {w["name"].strip().lower() for w in db.cellar_list()}
+    missing = [w for w in catalog.load() if w["name"].strip().lower() not in names]
+    if not missing:
+        return
+    if st.button(f"📥 {t('load_catalog', L).format(n=len(missing))}", key=key, width="stretch",
+                 help=t("load_catalog_help", L)):
+        n = db.cellar_seed(missing)
+        ui.flash(t("catalog_loaded", L).format(n=n))
+        st.rerun()
+
+
 def _cellar_tab(tasting, L):
     st.markdown(f"#### {t('db_title', L)}")
     q = st.text_input("q", placeholder=t("db_search", L), label_visibility="collapsed", key="cellar_q")
     found = db.cellar_list(q)
     st.caption(f"{len(found)} {t('db_wine_count', L)}")
+    _catalog_button(L, "seed_cellar")
     editing = st.session_state.get("edit_cellar")
     for cw in found:
         ui.wine_card(cw, L)
+        if cw["source"] == "catalog":
+            st.caption(f"📖 {t('catalog_wine', L)}")
         with st.popover(f"⚙️ {t('actions', L)}", width="stretch"):
             if st.button(f"✏️ {t('edit', L)}", key=f"ced_{cw['id']}", width="stretch"):
                 st.session_state["edit_cellar"] = None if editing == cw["id"] else cw["id"]
@@ -320,7 +339,7 @@ def _cellar_tab(tasting, L):
         if editing == cw["id"]:
             res = ui.wine_form(f"cedit_{cw['id']}", L, tasting["options"], cw, submit_label=f"💾 {t('save', L)}")
             if res:
-                db.cellar_update(cw["id"], res[0])
+                db.cellar_update(cw["id"], res[0], verified=True)
                 st.session_state["edit_cellar"] = None
                 st.rerun()
 
