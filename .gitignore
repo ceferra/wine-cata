@@ -1,5 +1,7 @@
 __pycache__/
 *.pyc
-.cata_state.json
-wines.db
+.venv/
+lacata.db*
+.streamlit/secrets.toml
 .env
+.pytest_cache/
