@@ -143,12 +143,12 @@ T = {
     "also_cellar": ("Guardar también en la bodega", "Also save to the cellar", "Guardar també al celler"),
     "also_update_cellar": ("Actualizar también en la bodega", "Also update in the cellar",
                            "Actualitzar també al celler"),
-    "ai_review_warning": ("El precio, la puntuación y el alcohol los estima la IA y pueden ser inventados. "
-                          "Compruébalos: son la respuesta correcta con la que se puntúa.",
-                          "Price, rating and alcohol are AI estimates and may be made up. "
-                          "Check them: they are the answer people are scored against.",
-                          "El preu, la puntuació i l'alcohol els estima la IA i poden ser inventats. "
-                          "Comprova'ls: són la resposta correcta amb què es puntua."),
+    "ai_review_warning": ("El precio, la puntuación y el alcohol son estimaciones (de la IA o del catálogo) y pueden "
+                          "no ser exactos. Compruébalos en la botella: son la respuesta con la que se puntúa.",
+                          "Price, rating and alcohol are estimates (from the AI or the catalog) and may be wrong. "
+                          "Check them on the bottle: they are the answer people are scored against.",
+                          "El preu, la puntuació i l'alcohol són estimacions (de la IA o del catàleg) i poden no "
+                          "ser exactes. Comprova'ls en la botella: són la resposta amb què es puntua."),
     "verified_check": ("He comprobado los datos", "I have checked the data", "He comprovat les dades"),
     "needs_review": ("datos sin comprobar", "data not checked", "dades sense comprovar"),
     "wine_added": ("Vino añadido.", "Wine added.", "Vi afegit."),
@@ -212,8 +212,8 @@ T = {
     "start_btn": ("Empezar", "Start", "Començar"),
     "add_wines_first": ("Añade al menos un vino para empezar.", "Add at least one wine to start.",
                         "Afig almenys un vi per a començar."),
-    "unreviewed_warning": ("Vinos con datos de IA sin comprobar: {wines}.", "Wines with unchecked AI data: {wines}.",
-                           "Vins amb dades d'IA sense comprovar: {wines}."),
+    "unreviewed_warning": ("Vinos con datos sin comprobar: {wines}.", "Wines with unchecked data: {wines}.",
+                           "Vins amb dades sense comprovar: {wines}."),
     "no_participants": ("Aún no se ha unido nadie.", "Nobody has joined yet.", "Encara no s'ha unit ningú."),
     "personal_link_org": ("Enlace personal (por si pierde la página):", "Personal link (in case they lose the page):",
                           "Enllaç personal (per si perd la pàgina):"),
@@ -243,6 +243,18 @@ T = {
     # ---- Cellar
     "db_title": ("Bodega", "Cellar", "Celler"),
     "db_wine_count": ("vinos", "wines", "vins"),
+    "load_catalog": ("Cargar {n} vinos españoles habituales", "Load {n} common Spanish wines",
+                     "Carregar {n} vins espanyols habituals"),
+    "load_catalog_help": ("Catálogo incluido en la app: uva, D.O., crianza y tipo. El precio y el alcohol son "
+                          "aproximados y no incluye puntuación.",
+                          "Catalog bundled with the app: grape, region, aging and type. Price and alcohol are "
+                          "approximate and there is no rating.",
+                          "Catàleg inclòs en l'app: raïm, D.O., criança i tipus. El preu i l'alcohol són "
+                          "aproximats i no inclou puntuació."),
+    "catalog_loaded": ("{n} vinos añadidos a la bodega.", "{n} wines added to the cellar.",
+                       "{n} vins afegits al celler."),
+    "catalog_wine": ("Del catálogo: precio y alcohol aproximados", "From the catalog: approximate price and alcohol",
+                     "Del catàleg: preu i alcohol aproximats"),
     "db_delete_q": ("Se borrará de la bodega (no de las catas).", "It will be removed from the cellar (not from tastings).",
                     "S'esborrarà del celler (no dels tasts)."),
 

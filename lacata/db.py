@@ -446,9 +446,12 @@ def cellar_add(wine: dict) -> int:
         return conn.execute(cellar.insert().values(**_clean_wine(wine))).inserted_primary_key[0]
 
 
-def cellar_update(cellar_id: int, wine: dict):
+def cellar_update(cellar_id: int, wine: dict, verified=False):
+    """verified=True marks a catalog wine as checked by the organizer (no longer flagged)."""
     data = _clean_wine(wine)
     data.pop("source")
+    if verified:
+        data["source"] = "manual"
     with get_engine().begin() as conn:
         conn.execute(cellar.update().where(cellar.c.id == cellar_id).values(**data))
 
@@ -456,6 +459,16 @@ def cellar_update(cellar_id: int, wine: dict):
 def cellar_delete(cellar_id: int):
     with get_engine().begin() as conn:
         conn.execute(cellar.delete().where(cellar.c.id == cellar_id))
+
+
+def cellar_seed(wines_: list) -> int:
+    """Add wines whose name is not in the cellar yet. Returns how many were added."""
+    with get_engine().begin() as conn:
+        known = {n.strip().lower() for n in conn.execute(select(cellar.c.name)).scalars()}
+        new = [_clean_wine(w) for w in wines_ if w["name"].strip().lower() not in known]
+        if new:
+            conn.execute(cellar.insert(), new)
+    return len(new)
 
 
 def cellar_count() -> int:

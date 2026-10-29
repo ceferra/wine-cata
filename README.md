@@ -31,6 +31,18 @@ Los campos que el vino real no tiene no puntúan; los que el participante deja v
 Además, cada uno puede decir **cuánto le gusta** cada vino (★, no puntúa). Al final salen el favorito,
 el más difícil y el de mejor calidad-precio, y se pueden descargar los resultados en CSV.
 
+## Catálogo de vinos habituales
+
+La app incluye ~100 vinos españoles conocidos ([`lacata/data/vinos_comunes.csv`](lacata/data/vinos_comunes.csv)):
+Rioja, Ribera, Rueda, Rías Baixas, Priorat, Cava, Jerez… Si la bodega está vacía al arrancar, se cargan solos;
+si faltan algunos, la pestaña **📚 Bodega** ofrece un botón para añadirlos.
+
+- Uva, D.O., crianza y tipo son la respuesta con la que se puntúa y están elegidos con cuidado.
+- El precio y el alcohol son **aproximados** (varían por añada y tienda) y **no hay puntuación**: al añadir uno de
+  estos vinos a una cata queda marcado como «datos sin comprobar» hasta que lo revisas con la botella delante.
+- Al editar un vino del catálogo en la Bodega se da por comprobado.
+- Para añadir o corregir vinos basta con editar el CSV.
+
 ## Uso local
 
 ```bash
@@ -46,9 +58,17 @@ Los móviles de la misma red entran con el QR (usa la IP del ordenador). Los dat
 2. En **Settings → Secrets** pega lo que necesites de [`.streamlit/secrets.toml.example`](.streamlit/secrets.toml.example):
    - `OPENAI_API_KEY`: activa la búsqueda con IA y la lectura de etiquetas.
    - `DATABASE_URL`: **muy recomendable**. Streamlit Cloud borra el disco en cada reinicio, así que sin una base de datos
-     externa se pierden las catas y la bodega. Vale un Postgres gratuito de Supabase o Neon.
+     externa se pierden las catas y los vinos que hayas añadido (el catálogo sí vuelve solo). Ver abajo.
    - `APP_PASSWORD`: si la pones, hace falta para crear catas. Así nadie gasta tu API key de OpenAI.
    - `PUBLIC_URL`: solo si el QR sale con una dirección incorrecta.
+
+### Que no se borren los datos (Postgres gratuito)
+
+1. Crea una cuenta en [neon.tech](https://neon.tech) (o [supabase.com](https://supabase.com)) y un proyecto nuevo.
+2. Copia la *connection string* (`postgresql://usuario:contraseña@host/basedatos?sslmode=require`).
+   En Supabase usa la del *Session pooler*.
+3. Pégala en Streamlit Cloud → **Settings → Secrets** como `DATABASE_URL = "postgresql://..."` y guarda.
+   La app se reinicia, crea las tablas sola y carga el catálogo.
 
 ## Tests
 
