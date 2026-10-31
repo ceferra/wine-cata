@@ -10,6 +10,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 # Keys built at runtime: t("score_" + f), t("type_" + x), t(cat + "_config"), t(e.code) for error codes.
 DYNAMIC = ([f"score_{f}" for f, _ in FIELDS] + [f"type_{x}" for x in WINE_TYPES]
            + ["grapes_config", "origins_config", "agings_config"]
+           + [f"import_w_{k}" for k in ("dup", "origin", "aging", "type", "number")]
            + ["pin_too_short", "name_required", "name_taken", "not_found", "not_started", "already_revealed",
               "already_sent", "ai_bad_key", "ai_rate_limit", "ai_error", "ai_not_found", "key_needed", "bad_image"])
 

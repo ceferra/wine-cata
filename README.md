@@ -5,7 +5,7 @@ Aplicación Streamlit para organizar catas a ciegas con puntuación automática,
 ## Cómo funciona
 
 1. El organizador entra en la web y crea una cata con un **PIN**. La app le da un **código de sala** (p. ej. `R8XCJ`).
-2. Añade los vinos: desde la bodega, con IA (por nombre o foto de la etiqueta) o a mano.
+2. Añade los vinos: desde la bodega, con IA (por nombre o foto de la etiqueta), desde un Excel/CSV o a mano.
 3. Los participantes escanean el QR (o escriben el código) y se apuntan con su nombre. Cada uno recibe un **enlace personal**.
 4. El organizador pulsa **Empezar** y, cuando todos han respondido, va **revelando** los vinos. Las pantallas se actualizan solas.
 
@@ -15,6 +15,13 @@ Aplicación Streamlit para organizar catas a ciegas con puntuación automática,
 | `/?sala=CODIGO` | participante |
 | `/?sala=CODIGO&org=1` | organizador (pide el PIN) |
 | `/?sala=CODIGO&pantalla=1` | pantalla para proyectar: QR, progreso y clasificación, sin desvelar nada |
+
+## Importar vinos desde Excel o CSV
+
+En **Vinos → 📄 Excel** puedes descargar una plantilla (Excel con desplegables, o CSV) y copiar un texto preparado
+para ChatGPT con las uvas, D.O. y crianzas válidas. Pásale la plantilla y la lista de vinos, y sube el archivo que
+te devuelva (o pega la tabla). La app normaliza lo habitual («D.O.Ca. Rioja», «reserva», «15,90 €», «Tempranillo y
+Graciano»), enseña una vista previa con avisos y omite los vinos que ya están en la cata.
 
 ## Puntuación (100 puntos por vino)
 

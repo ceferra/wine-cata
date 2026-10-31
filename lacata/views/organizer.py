@@ -1,8 +1,9 @@
 """Organizer view (PIN protected): wines, room control, results, cellar and settings."""
 
+import pandas as pd
 import streamlit as st
 
-from .. import ai, catalog, db, ui
+from .. import ai, catalog, db, importer, ui
 from ..config import secret
 from ..i18n import LANGS, t
 from ..scoring import rankings
@@ -82,7 +83,7 @@ def _wines_tab(tasting, wines, guesses, L):
 
     st.markdown(f"#### {t('add_wine', L)}")
     methods = {"db": t("method_db", L), "ai": t("method_ai", L), "photo": t("method_photo", L),
-               "manual": t("method_manual", L)}
+               "file": t("method_file", L), "manual": t("method_manual", L)}
     method = st.segmented_control("method", list(methods), format_func=methods.get, default="manual",
                                   label_visibility="collapsed", key="add_method", width="stretch")
 
@@ -117,6 +118,9 @@ def _wines_tab(tasting, wines, guesses, L):
                 with st.spinner(t("analyzing", L)):
                     _run_ai(lambda: ai.recognize_label(up.getvalue(), ai_key(), L, tasting["options"],
                                                        secret("OPENAI_MODEL")), L)
+
+    elif method == "file":
+        _import_section(tasting, wines, L)
 
     elif method == "manual":
         res = ui.wine_form("new_manual", L, tasting["options"], submit_label=t("add_wine_btn", L),
@@ -183,6 +187,70 @@ def _wines_tab(tasting, wines, guesses, L):
                 st.session_state["edit_wine"] = None
                 ui.flash(t("saved", L))
                 st.rerun()
+
+
+def _import_section(tasting, wines, L):
+    """Bulk add from a CSV/Excel file, e.g. the template filled in by ChatGPT."""
+    opts = tasting["options"]
+    st.caption(t("import_steps", L))
+    c1, c2 = st.columns(2)
+    c1.download_button(f"⬇️ {t('template_xlsx', L)}", importer.template_xlsx(opts, L), "plantilla_vinos.xlsx",
+                       mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", width="stretch")
+    c2.download_button(f"⬇️ {t('template_csv', L)}", importer.template_csv(L), "plantilla_vinos.csv",
+                       mime="text/csv", width="stretch")
+    with st.expander(f"🤖 {t('chatgpt_prompt', L)}"):
+        st.caption(t("chatgpt_prompt_hint", L))
+        st.code(importer.chatgpt_prompt(opts, L) + "- …", language=None, wrap_lines=True)
+
+    n = st.session_state.get("imp_n", 0)
+    up = st.file_uploader(t("import_upload", L), type=["xlsx", "csv", "txt"], key=f"imp_file_{n}")
+    pasted = st.text_area(t("import_paste", L), key=f"imp_text_{n}", height=100,
+                          placeholder=t("import_paste_placeholder", L))
+    if not up and not pasted.strip():
+        return
+    try:
+        df = importer.read_table(up.getvalue(), up.name) if up else importer.parse_text_table(pasted)
+        found, warnings, ignored = importer.rows_to_wines(df, opts)
+    except importer.ImportFailed as e:
+        st.error(t("import_no_name", L) if str(e) == "no_name_column" else f"{t('import_bad_file', L)} ({e})")
+        return
+
+    in_tasting = {w["name"].strip().lower() for w in wines}
+    new = [w for w in found if w["name"].strip().lower() not in in_tasting]
+    if len(new) < len(found):
+        st.info(t("import_already", L).format(n=len(found) - len(new)))
+    if not new:
+        st.warning(t("import_nothing", L))
+        return
+    if ignored:
+        st.caption(f"{t('import_ignored_cols', L)}: {', '.join(ignored)}")
+    if warnings:
+        with st.expander(f"⚠️ {t('import_warnings', L)} ({len(warnings)})", expanded=True):
+            st.markdown("\n".join(f"- {t('import_row', L)} {row}: {t('import_w_' + kind, L)} {detail}".rstrip()
+                                   for kind, row, detail in warnings))
+    show = ["name", "grape", "origin", "aging", "type", "year", "alcohol", "price", "rating"]
+    st.dataframe(pd.DataFrame(new)[show].rename(columns=dict(zip(importer.COLUMNS, importer.headers(L)))),
+                 hide_index=True, width="stretch")
+    to_cellar = st.checkbox(t("also_cellar", L), value=True, key=f"imp_cellar_{n}")
+    if st.button(f"➕ {t('import_add', L).format(n=len(new))}", type="primary", width="stretch"):
+        _import_wines(tasting, new, to_cellar, L)
+        st.session_state["imp_n"] = n + 1  # fresh uploader and text box
+        st.rerun()
+
+
+def _import_wines(tasting, new, to_cellar, L):
+    tid = tasting["id"]
+    added = db.add_options(tid, [g.strip() for w in new for g in w["grape"].split(",")], [w["origin"] for w in new])
+    known = {cw["name"].strip().lower(): cw["id"] for cw in db.cellar_list()} if to_cellar else {}
+    for w in new:
+        cellar_id = None
+        if to_cellar:
+            cellar_id = known.get(w["name"].strip().lower()) or db.cellar_add(w)
+        db.add_wine(tid, w, cellar_id=cellar_id)
+    msg = t("import_done", L).format(n=len(new))
+    if added:
+        msg += " " + t("options_added", L) + ": " + ", ".join(added)
+    ui.flash(msg)
 
 
 def _run_ai(call, L):
