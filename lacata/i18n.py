@@ -116,6 +116,7 @@ T = {
     "method_db": ("📚 Bodega", "📚 Cellar", "📚 Celler"),
     "method_ai": ("🤖 IA", "🤖 AI", "🤖 IA"),
     "method_photo": ("📷 Foto", "📷 Photo", "📷 Foto"),
+    "missing_people": ("Faltan", "Waiting for", "Falten"),
     "method_file": ("📄 Excel", "📄 Excel", "📄 Excel"),
     "import_steps": ("1) Descarga la plantilla. 2) Pásasela a ChatGPT con el texto de abajo y la lista de vinos. "
                      "3) Sube aquí el Excel o CSV que te devuelva, o pega la tabla.",

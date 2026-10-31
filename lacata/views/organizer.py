@@ -325,6 +325,9 @@ def _room_tab(tasting, wines, people, guesses, ranks, L):
                 continue
             color = "green" if missing == 0 and people else "orange"
             st.markdown(f"🍷 **{ui.esc(label)}** · :{color}[{n_g}/{len(people)}]")
+            if missing:
+                waiting = [p["name"] for p in people if (p["id"], w["id"]) not in guesses]
+                st.caption(f"⏳ {t('missing_people', L)}: {ui.esc(', '.join(waiting))}")
             if missing == 0:
                 if st.button(f"🔓 {t('reveal', L)}", key=f"rv_{w['id']}", width="stretch"):
                     db.reveal_wine(w["id"])
